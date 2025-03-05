@@ -1,12 +1,11 @@
 # "org" ensures this Service is used with the correct Serverless Framework License Key.
 org: oniely
 # "service" is the name of this project. This will also be added to your AWS resource names.
-service: python-serverless-oniely
+service: workshop
 
 provider:
   name: aws
   runtime: python3.12
-  role: arn:aws:iam::874957933250:role/serverless-app-role
   region: us-east-2
   environment:
     PRODUCT_TABLE: "products-oniely"
