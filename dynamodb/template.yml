@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AWS CloudFormation Template for the DynamoDB
+Parameters:
+  EnvironmentName:
+    Description: Environment name for the application dev/staging/production
+    Type: String
+    AllowedValues:
+      - dev
+      - staging
+      - production
+Resources:
+  DynamoDBTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub "${EnvironmentName}-dbtable"
+      AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+Outputs:
+  DynamoDBTableName:
+    Value: !Ref DynamoDBTable
