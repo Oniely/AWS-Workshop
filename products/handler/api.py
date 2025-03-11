@@ -88,11 +88,11 @@ def create_one_product(event, context):
     # sqs queue
     sqs = boto3.resource("sqs", region_name="us-east-2")
     queue = sqs.get_queue_by_name(QueueName="my-sqs-oniely")
-    response = queue.send_message(MessageBody=json.dumps(body, cls=DecimalEncoder))
+    queue.send_message(MessageBody=json.dumps(body, cls=DecimalEncoder))
 
     print(return_body)
 
-    return {"statusCode": 200, "body": json.dumps(return_body, cls=DecimalEncoder)}
+    return response
 
 
 def get_product(event, context):
