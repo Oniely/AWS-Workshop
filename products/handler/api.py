@@ -2,7 +2,9 @@ import json
 import boto3
 from decimal import Decimal
 from model.product import Product
+from model.order import Order
 import os
+import uuid
 
 
 PRODUCTS_TABLE = os.environ.get("PRODUCTS_TABLE")
@@ -216,6 +218,46 @@ def get_product_by_name(event, context):
         return {"statusCode": 404, "body": json.dumps({"error": "Product not found"})}
 
     return_body["items"] = product[0]
+    response = {
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps(return_body, cls=DecimalEncoder),
+    }
+
+    return response
+
+
+def order_product(event, context):
+    path_params = event.get("pathParameters", {})
+    product_id = path_params.get("id")
+    body = json.loads(event.get("body", "{}"), parse_float=Decimal)
+
+    print(body)
+
+    if not product_id:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": "Product ID is required"}),
+        }
+
+    order_id = str(uuid.uuid4())
+    print({order_id, product_id, body["quantity"]})
+    order = Order().save(order_id, product_id, body["quantity"])
+
+    if "error" in order:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": order["error"]}),
+        }
+
+    return_body = {}
+    return_body["items"] = {
+        "order_id": order_id,
+        "product_id": product_id,
+        "quantity": body["quantity"],
+        "total": order["total"],
+    }
+
     response = {
         "statusCode": 200,
         "headers": {"Content-Type": "application/json"},

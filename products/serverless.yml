@@ -21,7 +21,9 @@ provider:
                       - "dynamodb:PutItem"
                       - "dynamodb:UpdateItem"
                       - "dynamodb:DeleteItem"
-                  Resource: "arn:aws:dynamodb:us-east-2:272898481162:table/products-table-oniely"
+                  Resource:
+                      - "arn:aws:dynamodb:us-east-2:272898481162:table/products-table-oniely"
+                      - "arn:aws:dynamodb:us-east-2:272898481162:table/orders-table-oniely"
 
                 - Effect: "Allow"
                   Action:
@@ -85,11 +87,11 @@ functions:
             - httpApi:
                   path: /products/name/{name}
                   method: get
-    buy_product:
-        handler: handler.api.buy_product
+    order_product:
+        handler: handler.api.order_product
         events:
             - httpApi:
-                  path: /products/buy/{id}
+                  path: /order/product/{id}
                   method: post
 
     # s3 functions
