@@ -5,7 +5,7 @@ from model.product import Product
 import os
 
 
-PRODUCT_TABLE = os.environ.get('PRODUCT_TABLE')
+PRODUCTS_TABLE = os.environ.get('PRODUCTS_TABLE')
 
 class DecimalEncoder(json.JSONEncoder):
   def default(self, obj):
@@ -27,13 +27,15 @@ def hello(event, context):
  
 def get_all_products(event, context):
     dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
-    table = dynamodb.Table(PRODUCT_TABLE)
+    table = dynamodb.Table(PRODUCTS_TABLE)
     
     return_body = {}
     return_body["items"] = table.scan().get('Items')
     
     return_body["status"] = "success"
-    response = {"statusCode": 200, "body": json.dumps(return_body, cls=DecimalEncoder)}
+    response = {"statusCode": 200,"headers": {
+        "Content-Type": "application/json"
+    }, "body": json.dumps(return_body, cls=DecimalEncoder)}
     
     return response
     
@@ -48,24 +50,30 @@ def create_one_product(event, context):
     if not product_id:
         return {'statusCode': 400, "body": json.dumps({'error': 'Required a Product ID'})}
         
-    new_product = Product(product_id)
+    product = Product()
     
-    product = new_product.save(body['product_name'], body['brand_name'], body['price'], body['quantity'])
+    new_product_response = product.save(product_id, body['product_name'], body['brand_name'], body['price'], body['quantity'])
     
-    if not product:
-        return {"statusCode": 400, "body": json.dumps({"error": "Something went wrong while adding product"})}
+    if "error" in new_product_response:
+        return {"statusCode": 400, "body": json.dumps({'error': new_product_response['error']})}
         
     
-    response = {"statusCode": 200, "body": json.dumps(body, cls=DecimalEncoder)}
+    return_body = {}
+    return_body['items'] = body
+    
+    if 'message' in new_product_response:
+        return_body['message'] = new_product_response['message']
+    
+    response = {"statusCode": 200, "body": json.dumps(return_body, cls=DecimalEncoder)}
     
     # sqs queue 
     sqs = boto3.resource('sqs', region_name='us-east-2')
     queue = sqs.get_queue_by_name(QueueName='my-sqs-oniely')    
     response = queue.send_message(MessageBody=json.dumps(body, cls=DecimalEncoder))
     
-    print(body)
+    print(return_body)
     
-    return body
+    return {"statusCode": 200, "body": json.dumps(return_body, cls=DecimalEncoder)}
  
 def get_product(event, context):
     path_params = event.get("pathParameters", {})
@@ -77,13 +85,15 @@ def get_product(event, context):
     
     
     return_body = {}
-    product = Product(product_id).get(product_id)
+    product = Product().get(product_id)
     
     if not product:
         return {"statusCode": 404, "body": json.dumps({"error": "Product not found"})}
     
     return_body['items'] = product
-    response = {"statusCode": 200, "body": json.dumps(return_body, cls=DecimalEncoder)}
+    response = {"statusCode": 200, "headers": {
+        "Content-Type": "application/json"
+    },"body": json.dumps(return_body, cls=DecimalEncoder)}
     
     return response
     
@@ -95,12 +105,10 @@ def delete_product(event, context):
         return {"statusCode": 400, "body": json.dumps({"error": "Product ID is required"})}
     
     return_body = {}
-    product = Product(product_id).delete()
+    delete_product_response = Product().delete(product_id)
     
-    if not product:
-        return {"statusCode": 404, "body": json.dumps({"message": "Product ID not found"})}
-    
-    return_body['items'] = product
+    if not delete_product_response:
+        return {"statusCode": 404, "body": json.dumps({"error": "Product deletion failed."})}
     
     return_body['status'] = 'success'
     response = {"statusCode": 200, "body": json.dumps(return_body, cls=DecimalEncoder)}
@@ -121,7 +129,7 @@ def update_product(event, context):
         return {"statusCode": 400, "body": json.dumps({"error": "Request body is required"})}
     
     dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
-    table = dynamodb.Table(PRODUCT_TABLE)
+    table = dynamodb.Table(PRODUCTS_TABLE)
     
     return_body = {}
     data = table.get_item(Key={'product_id': product_id})
@@ -133,9 +141,44 @@ def update_product(event, context):
     update_expression = "SET " + ", ".join(f"{key} = :{key}" for key in body.keys())
     expression_values = {f":{key}": value for key, value in body.items()}
     
-    updated_product = Product(product_id).update(product_id, update_expression, expression_values)
+    updated_product = Product().update(product_id, update_expression, expression_values)
+    
+    if 'error' in updated_product:
+        return {"statusCode": 400, "body": json.dumps({"error": updated_product['error']})}
     
     return_body['status'] = 'success'
     response = {"statusCode": 200, "body": json.dumps(updated_product, cls=DecimalEncoder)}
     
     return response
+    
+def get_product_by_name(event, context):
+    path_params = event.get("pathParameters", {})
+    product_name = path_params.get("name")
+    
+    print(product_name)
+    
+    if not product_name:
+        return {"statusCode": 400, "body": json.dumps({"error": "Product name is required"})}
+    
+    return_body = {}
+    product = Product().get_by_name(product_name)
+    
+    if not product:
+        return {"statusCode": 404, "body": json.dumps({"error": "Product not found"})}
+    
+    return_body['items'] = product[0]
+    response = {"statusCode": 200, "headers": {
+        "Content-Type": "application/json"
+    },"body": json.dumps(return_body, cls=DecimalEncoder)}
+    
+    return response
+    
+def buy_product(event,context):
+    path_params = event.get("pathParameters", {})
+    product_id = path_params.get("id")
+    
+    if not product_id:
+        return {"statusCode": 400, "body": json.dumps({"error": "Product ID is required"})}
+    
+    return_body = {}
+    buy_product_response = Product().buy_product(product_id)

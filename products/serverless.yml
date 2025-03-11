@@ -8,7 +8,8 @@ provider:
   runtime: python3.12
   region: us-east-2
   environment:
-    PRODUCT_TABLE: "products-table-oniely"
+    PRODUCTS_TABLE: "products-table-oniely"
+    ORDERS_TABLE: "orders-table-oniely"
   iam:
     role:
       statements:
@@ -80,6 +81,18 @@ functions:
       - httpApi:
           path: /products/{id}
           method: put
+  get_product_by_name:
+    handler: handler.api.get_product_by_name
+    events:
+      - httpApi:
+          path: /products/name/{name}
+          method: get
+  buy_product:
+    handler: handler.api.buy_product
+    events:
+      - httpApi:
+          path: /products/buy/{id}
+          method: post
           
   # s3 functions
   batchCreateProducts:
