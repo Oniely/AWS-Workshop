@@ -1,14 +1,36 @@
 # "org" ensures this Service is used with the correct Serverless Framework License Key.
 org: oniely
 # "service" is the name of this project. This will also be added to your AWS resource names.
-service: workshop
+service: serverless-oniely
 
 provider:
   name: aws
   runtime: python3.12
   region: us-east-2
   environment:
-    PRODUCT_TABLE: "products-oniely"
+    PRODUCT_TABLE: "products-table-oniely"
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "dynamodb:Scan"
+            - "dynamodb:GetItem"
+            - "dynamodb:Query"
+            - "dynamodb:PutItem"
+            - "dynamodb:UpdateItem"
+            - "dynamodb:DeleteItem"
+          Resource: "arn:aws:dynamodb:us-east-2:272898481162:table/products-table-oniely"
+        
+        - Effect: "Allow"
+          Action:
+            - "sqs:GetQueueUrl"
+            - "sqs:SendMessage"
+            - "sqs:ReceiveMessage"
+            - "sqs:DeleteMessage"
+            - "sqs:GetQueueAttributes"
+          Resource: "arn:aws:sqs:us-east-2:272898481162:my-sqs-oniely"
+
   
 plugins:
   - serverless-offline
@@ -64,7 +86,7 @@ functions:
     handler: handler.s3.batch_create_products
     events:
       - s3:
-          bucket: products-s3bucket-oniely
+          bucket: products-s3-oniely
           event: s3:ObjectCreated:*
           existing: true
           rules:
@@ -73,28 +95,28 @@ functions:
     handler: handler.s3.batch_delete_products
     events:
       - s3:
-          bucket: products-s3bucket-oniely
+          bucket: products-s3-oniely
           event: s3:ObjectCreated:*
           existing: true
           rules:
             - prefix: for_delete/
             
   # sqs functions
-  receiveMessagesFromSqs:
-    handler: handler.sqs.receive_message_from_sqs
-    events:
-      - sqs:
-            arn:
-              Fn::GetAtt:
-                - MySQSQueue
-                - Arn
+  # receiveMessagesFromSqs:
+  #   handler: handler.sqs.receive_message_from_sqs
+  #   events:
+  #     - sqs:
+  #           arn:
+  #             Fn::GetAtt:
+  #               - MySQSQueue
+  #               - Arn
 
 resources:
   Resources:
     MySQSQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: sqs-queue-yml
+        QueueName: my-sqs-oniely
         VisibilityTimeout: 30
         MessageRetentionPeriod: 120960
   

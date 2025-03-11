@@ -60,7 +60,7 @@ def create_one_product(event, context):
     
     # sqs queue 
     sqs = boto3.resource('sqs', region_name='us-east-2')
-    queue = sqs.get_queue_by_name(QueueName='oniely-sqs')    
+    queue = sqs.get_queue_by_name(QueueName='my-sqs-oniely')    
     response = queue.send_message(MessageBody=json.dumps(body, cls=DecimalEncoder))
     
     print(body)
@@ -83,8 +83,6 @@ def get_product(event, context):
         return {"statusCode": 404, "body": json.dumps({"error": "Product not found"})}
     
     return_body['items'] = product
-    
-    return_body['status'] = 'success'
     response = {"statusCode": 200, "body": json.dumps(return_body, cls=DecimalEncoder)}
     
     return response
@@ -122,10 +120,8 @@ def update_product(event, context):
     if not body:
         return {"statusCode": 400, "body": json.dumps({"error": "Request body is required"})}
     
-    table_name = 'products-oniely'
-    
     dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
-    table = dynamodb.Table(table_name)
+    table = dynamodb.Table(PRODUCT_TABLE)
     
     return_body = {}
     data = table.get_item(Key={'product_id': product_id})
