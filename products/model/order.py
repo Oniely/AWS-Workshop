@@ -11,7 +11,7 @@ table = dynamodb.Table(ORDERS_TABLE)
 
 class Order:
     @staticmethod
-    def save(order_id, product_id, quantity):
+    def save(order_id, product_id, quantity, address):
         try:
             existing_order = Order.get(order_id)
 
@@ -28,6 +28,8 @@ class Order:
                     "product_id": product_id,
                     "quantity": quantity,
                     "total": product["price"] * quantity,
+                    "address": address,
+                    "status": "To ship",
                 }
             )
 

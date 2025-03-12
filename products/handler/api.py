@@ -240,9 +240,21 @@ def order_product(event, context):
             "body": json.dumps({"error": "Product ID is required"}),
         }
 
+    if not body:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": "Request body is required"}),
+        }
+
+    if "quantity" not in body or "address" not in body:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": "Quantity and address are required"}),
+        }
+
     order_id = str(uuid.uuid4())
     print({order_id, product_id, body["quantity"]})
-    order = Order().save(order_id, product_id, body["quantity"])
+    order = Order().save(order_id, product_id, body["quantity"], body["address"])
 
     if "error" in order:
         return {
@@ -256,6 +268,8 @@ def order_product(event, context):
         "product_id": product_id,
         "quantity": body["quantity"],
         "total": order["total"],
+        "address": body["address"],
+        "status": "To ship",
     }
 
     response = {
