@@ -37,14 +37,21 @@ class User:
             existing_user = User.get_user(email)
 
             if not existing_user:
-                return False
+                raise ValueError("User not found")
 
             if existing_user.get("password") == password:
-                return True
+                return {
+                    "user_id": existing_user.get("user_id"),
+                    "email": existing_user.get("email"),
+                }
+            else:
+                raise ValueError("Email or password is incorrect")
 
+        except ValueError as e:
+            return {"error": str(e)}
         except Exception as e:
             print(f"Error getting user: {str(e)}")
-            return False
+            return {"error": "Something went wrong while logging in"}
 
     def create_user(self, email, password, confirmPassword):
         try:
