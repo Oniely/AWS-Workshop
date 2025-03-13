@@ -11,7 +11,7 @@ provider:
         PRODUCTS_TABLE: ${env:PRODUCTS_TABLE}
         ORDERS_TABLE: ${env:ORDERS_TABLE}
         USERS_TABLE: ${env:USERS_TABLE}
-        SECRET_KEY: ${env:JWT_SECRET_KEY}
+        JWT_SECRET_KEY: ${env:JWT_SECRET_KEY}
     iam:
         role:
             statements:
@@ -26,6 +26,7 @@ provider:
                   Resource:
                       - "arn:aws:dynamodb:us-east-2:272898481162:table/products-table-oniely"
                       - "arn:aws:dynamodb:us-east-2:272898481162:table/orders-table-oniely"
+                      - "arn:aws:dynamodb:us-east-2:272898481162:table/users-table-oniely"
 
                 - Effect: "Allow"
                   Action:
@@ -94,6 +95,18 @@ functions:
         events:
             - httpApi:
                   path: /order/product/{id}
+                  method: post
+    login_user:
+        handler: handler.auth.login_user
+        events:
+            - httpApi:
+                  path: /auth/login_user
+                  method: post
+    register_user:
+        handler: handler.auth.register_user
+        events:
+            - httpApi:
+                  path: /auth/register_user
                   method: post
 
     # s3 functions
