@@ -8,8 +8,10 @@ provider:
     runtime: python3.12
     region: us-east-2
     environment:
-        PRODUCTS_TABLE: "products-table-oniely"
-        ORDERS_TABLE: "orders-table-oniely"
+        PRODUCTS_TABLE: ${env:PRODUCTS_TABLE}
+        ORDERS_TABLE: ${env:ORDERS_TABLE}
+        USERS_TABLE: ${env:USERS_TABLE}
+        SECRET_KEY: ${env:JWT_SECRET_KEY}
     iam:
         role:
             statements:
